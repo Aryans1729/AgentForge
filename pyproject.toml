@@ -31,7 +31,10 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["tests"]
 addopts = "-ra --strict-markers"
+# SQLAlchemy relationship/config warnings usually mean a real modelling bug: fail on them.
+filterwarnings = ["error"]
 markers = [
     "postgres: requires a running PostgreSQL (docker compose up -d db)",
 ]
@@ -42,3 +45,9 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["enterprisegym", "factories"]
+
+[tool.ruff.format]
+exclude = ["*.md"]
