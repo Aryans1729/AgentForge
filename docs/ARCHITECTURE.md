@@ -121,8 +121,28 @@ and no payment without an approved claim.
 would pass both. *Trade-off:* expected values are duplicated, and task authoring is slower.
 
 ### D3. Money as integer cents, time from a simulated clock
-Floats make `0.1 + 0.2 != 0.3` a grading bug. Each task fixes a `business_date`, so
-"is the policy active today?" never depends on when the benchmark runs.
+Floats make `0.1 + 0.2 != 0.3` a grading bug. Money columns carry the unit in their
+name (`coverage_amount_cents`, `deductible_cents`, `claim_amount_cents`, `amount_cents`);
+this is the only deliberate rename from the original field list. Each task fixes a
+`business_date`, so "is the policy active today?" never depends on when the benchmark runs.
+For the same reason, policy expiry is derived from `expiry_date`, not stored as a status.
+
+### D3a. What the database enforces (Milestone 1)
+The schema enforces only truths that hold in *every* task. Some examples:
+- positive amounts;
+- `deductible < coverage`;
+- `expiry > start`;
+- a document's `uploaded_at` is NULL if and only if its status is `requested`;
+- foreign keys, including a composite FK so a claim's policy belongs to the same customer.
+
+It deliberately does **not** make payments unique per claim. Duplicates are a business
+judgement, graded by the verifier.
+
+Two schema paths exist:
+- `metadata.create_all` builds per-episode databases.
+- Alembic manages the long-lived Postgres database.
+
+Tests assert the two paths produce the same tables, indexes and CHECK constraints.
 
 ### D4. Deterministic IDs and seeds
 Seeded entities have stable IDs (`CLM-1001`). Entities the agent creates get IDs from a
@@ -196,7 +216,8 @@ tasks/                 30 → 50 task directories
 configs/               reward/*.yaml, experiments/*.yaml
 docs/handbook.md       public operations handbook given to agents
 tests/                 unit/ integration/ adversarial/ e2e/
-docker/                Dockerfile, docker-compose.yml
+migrations/            Alembic environment + versioned schema migrations
+docker/                Dockerfile, postgres-init/ (docker-compose.yml at repo root)
 harbor/                Harbor packaging (M12)
 dashboard/             frontend (M13)
 ```
